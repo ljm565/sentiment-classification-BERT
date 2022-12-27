@@ -63,7 +63,7 @@ class Trainer:
             self.dataloaders = {s: DataLoader(d, self.batch_size, shuffle=False) for s, d in self.dataset.items() if s == 'test'}
 
         # model, optimizer, loss
-        self.model = BERT(self.config, self.tokenizer, self.device).to(self.device)
+        self.model = BERT(self.config, self.device).to(self.device)
         self.criterion = nn.CrossEntropyLoss()
     
         if self.mode == 'train':

@@ -6,11 +6,10 @@ from transformers import BertModel
 
 # BERT
 class BERT(nn.Module):
-    def __init__(self, config, tokenizer, device):
+    def __init__(self, config, device):
         super(BERT, self).__init__()
         self.pretrained_model = config.pretrained_model
         self.n_class = config.n_class
-        self.tokenizer = tokenizer
         self.device = device
 
         self.model = BertModel.from_pretrained(self.pretrained_model)
