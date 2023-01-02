@@ -21,7 +21,8 @@ class Tokenizer:
 
 
     def encode(self, s):
-        return self.tokenizer.encode(s)
+        # for eliminate sos and eos tokens that are automatically added to a sentence
+        return self.tokenizer.encode(s)[1:-1]
 
 
     def decode(self, tok):
