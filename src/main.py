@@ -35,7 +35,7 @@ def main(config_path:Config, args:ArgumentParser):
         os.makedirs(base_path+'images', exist_ok=True)
         os.makedirs(base_path+'data/processed', exist_ok=True)
     
-        # save nmt data
+        # save processed data
         save_data(base_path)
 
         # split dataset path
