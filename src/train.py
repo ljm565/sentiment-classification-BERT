@@ -10,7 +10,6 @@ from tokenizer import Tokenizer
 import random
 import time
 import sys
-from math import ceil
 
 from utils.config import Config
 from utils.utils_func import *
@@ -68,7 +67,7 @@ class Trainer:
         self.criterion = nn.CrossEntropyLoss()
     
         if self.mode == 'train':
-            total_steps = ceil(len(self.dataloaders['train'].dataset) / self.batch_size) * self.epochs
+            total_steps = len(self.dataloaders['train']) * self.epochs
             pct_start = 100 / total_steps
             final_div_factor = self.lr / 25 / 2.5e-6
             self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
