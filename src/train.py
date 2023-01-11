@@ -228,7 +228,7 @@ class Trainer:
         # visualization the entire statistics
         cm = confusion_matrix(all_gt, all_pred)
         cm = pd.DataFrame(cm, index=class_name, columns=class_name)
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(12, 10))
         plt.imshow(cm, cmap='Blues', interpolation=None)
         plt.title('Visualized Statistics', fontsize=20)
         plt.xlabel('Prediction', fontsize=20)
