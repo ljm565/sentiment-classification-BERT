@@ -58,7 +58,7 @@ BERT 기반 감성 분류 모델과 pre-trained BERT 사용에 대한 설명은 
     * batch_size: batch size 지정.
     * epochs: 학습 epoch 설정.
     * lr: learning rate 지정.
-    * early_stop_criterion: validation set의 최대 accuracy를 내어준 학습 epoch 대비 설정된 숫자만큼 epoch이 지나도 나아지지 않을 경우 학습 조기 종료.
+    * early_stop_criterion: Validation set의 최대 accuracy를 내어준 학습 epoch 대비 설정된 숫자만큼 epoch이 지나도 나아지지 않을 경우 학습 조기 종료.
     * result_num: 모델 테스트 시, 결과를 보여주는 sample 개수.
     <br><br><br>
 
