@@ -2,7 +2,7 @@ from transformers import BertTokenizer
 
 
 
-class Tokenizer:
+class BERTTokenizer:
     def __init__(self, config):
         self.pretrained_model = config.pretrained_model
         self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_model)

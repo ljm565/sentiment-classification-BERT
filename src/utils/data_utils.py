@@ -1,5 +1,18 @@
+import random
+import numpy as np
+
 import torch
 from torch.utils.data import Dataset
+
+from utils import LOGGER, colorstr
+
+
+
+def seed_worker(worker_id):  # noqa
+    """Set dataloader worker seed https://pytorch.org/docs/stable/notes/randomness.html#dataloader."""
+    worker_seed = torch.initial_seed() % 2 ** 32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 
@@ -33,3 +46,16 @@ class DLoader(Dataset):
     
     def __len__(self):
         return self.length
+
+
+
+class CustomDLoader(Dataset):
+    def __init__(self, path):
+        LOGGER.info(colorstr('red', 'Custom dataloader is required..'))
+        raise NotImplementedError
+
+    def __getitem__(self, idx):
+        pass
+    
+    def __len__(self):
+        pass

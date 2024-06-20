@@ -66,10 +66,10 @@ BERT 기반 감성 분류 모델과 pre-trained BERT 사용에 대한 설명은 
 ## 결과
 * ### Sentiment Classification BERT 모델 결과
     * Loss History<br>
-    <img src="images/loss.png" width="80%"><br><br>
+    <img src="docs/figs/loss.png" width="80%"><br><br>
 
     * Accuracy History<br>
-    <img src="images/acc.png" width="80%"><br><br>
+    <img src="docs/figs/acc.png" width="80%"><br><br>
     
     * 최종 Test Set Statistics<br>
         Validation set accuracy가 가장 높았던 11 epoch 모델을 test set에 적용한 결과<br><br>
@@ -85,7 +85,7 @@ BERT 기반 감성 분류 모델과 pre-trained BERT 사용에 대한 설명은 
            macro avg       0.86      0.86      0.86      1576
         weighted avg       0.86      0.86      0.86      1576
         ```
-        <img src="images/statistics.png" width="100%"><br><br>
+        <img src="docs/figs/statistics.png" width="100%"><br><br>
 
     * 결과 샘플<br>
         ```
