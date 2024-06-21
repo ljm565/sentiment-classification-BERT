@@ -1,6 +1,9 @@
+from transformers import BertModel
+
 import torch
 import torch.nn as nn
-from transformers import BertModel
+
+from tools.tokenizers import BERTTokenizer
 
 
 # BERT
@@ -8,11 +11,11 @@ class BERT(nn.Module):
     def __init__(self, config, device):
         super(BERT, self).__init__()
         self.pretrained_model = config.pretrained_model
-        self.n_class = config.n_class
+        self.class_num = config.class_num
         self.device = device
 
         self.model = BertModel.from_pretrained(self.pretrained_model)
-        self.fc = nn.Linear(self.model.config.hidden_size, self.n_class)
+        self.fc = nn.Linear(self.model.config.hidden_size, self.class_num)
         self.pos_ids = torch.arange(config.max_len).to(self.device)
 
 

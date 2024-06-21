@@ -3,10 +3,11 @@ from transformers import BertTokenizer
 
 
 class BERTTokenizer:
-    def __init__(self, config):
-        self.pretrained_model = config.pretrained_model
-        self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_model)
+    def __init__(self, path):
+        self.tokenizer = BertTokenizer.from_pretrained(path)
 
+        self.bos_token, self.bos_token_id = self.tokenizer.bos_token, self.tokenizer.bos_token_id
+        self.eos_token, self.eos_token_id = self.tokenizer.eos_token, self.tokenizer.eos_token_id
         self.pad_token, self.pad_token_id = self.tokenizer.pad_token, self.tokenizer.pad_token_id
         self.cls_token, self.cls_token_id = self.tokenizer.cls_token, self.tokenizer.cls_token_id
         self.sep_token, self.sep_token_id = self.tokenizer.sep_token, self.tokenizer.sep_token_id

@@ -3,7 +3,7 @@ import os
 import torch
 from torch.utils.data import DataLoader, distributed
 
-from models import SentimentLSTM
+from models import BERT
 from utils import RANK
 from utils.data_utils import DLoader, CustomDLoader, seed_worker, imdb_download
 
@@ -12,7 +12,7 @@ PIN_MEMORY = str(os.getenv('PIN_MEMORY', True)).lower() == 'true'  # global pin_
 
 
 def get_model(config, tokenizer, device):
-    model = SentimentLSTM(config, tokenizer, device)
+    model = BERT(config, tokenizer, device)
     return model.to(device)
 
 

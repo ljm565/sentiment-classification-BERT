@@ -10,7 +10,7 @@ import torch.optim as optim
 from torch import distributed as dist
 
 from tools import TrainingLogger
-from tools.tokenizers import WordTokenizer
+from tools.tokenizers import BERTTokenizer
 from trainer.build import get_model, get_data_loader
 from utils import RANK, LOGGER, colorstr, init_seeds
 from utils.filesys_utils import *
@@ -68,18 +68,6 @@ class Trainer:
         if self.is_training_mode:
             self.optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
 
-
-    def _init_tokenizer(self, config):
-        if config.IMDb_train:
-            trainset, _ = imdb_download(config)
-            tokenizer = WordTokenizer(config, trainset)
-        else:
-            # NOTE: You need train data to build custom word tokenizer
-            trainset_path = config.CUSTOM.train_data_path
-            LOGGER.info(colorstr('red', 'You need train data to build custom word tokenizer..'))
-            raise NotImplementedError
-        return tokenizer
-    
 
     def _init_model(self, config, tokenizer, mode):
         def _resume_model(resume_path, device, is_rank_zero):
