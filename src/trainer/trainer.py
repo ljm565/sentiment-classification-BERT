@@ -1,6 +1,7 @@
 import gc
 import sys
 import time
+import math
 import random
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, classification_report
@@ -12,7 +13,7 @@ from torch import distributed as dist
 
 from tools import TrainingLogger
 from trainer.build import get_model, get_data_loader
-from utils import RANK, LOGGER, colorstr, init_seeds
+from utils import RANK, LOGGER, SCHEDULER_MSG, SCHEDULER_TYPE, colorstr, init_seeds
 from utils.filesys_utils import *
 from utils.training_utils import *
 from utils.func_utils import label_mapping
@@ -38,6 +39,7 @@ class Trainer:
         self.is_ddp = is_ddp
         self.is_rank_zero = True if not self.is_ddp or (self.is_ddp and device == 0) else False
         self.config = config
+        self.scheduler_type = self.config.scheduler_type
         self.world_size = len(self.config.device) if self.is_ddp else 1
         self.dataloaders = {}
         if self.is_training_mode:
@@ -47,6 +49,9 @@ class Trainer:
         # path, data params
         self.config.is_rank_zero = self.is_rank_zero
         self.resume_path = resume_path
+
+        assert self.scheduler_type in SCHEDULER_TYPE, \
+            SCHEDULER_MSG + f' but got {colorstr(self.scheduler_type)}'
 
         # init tokenizer, model, dataset, dataloader, etc.
         self.modes = ['train', 'validation'] if self.is_training_mode else ['test']
@@ -61,10 +66,23 @@ class Trainer:
             yaml_save(self.save_dir / 'args.yaml', self.config)  # save run args
         
         # init criterion, optimizer, etc.
-        self.epochs = self.config.epochs
+        self.steps = self.config.steps
+        self.lr0 = self.config.lr0
+        self.lrf = self.config.lrf
+        self.epochs = math.ceil(self.steps / len(self.dataloaders['train'])) if self.is_training_mode else 1
         self.criterion = nn.CrossEntropyLoss()
         if self.is_training_mode:
             self.optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
+
+             # init scheduler
+            self.warmup_steps_n = max(0, self.config.warmup_steps)
+            if self.scheduler_type == 'cosine':
+                self.lf = one_cycle(1, self.lrf, self.steps)
+            elif self.scheduler_type == 'linear':
+                self.lf = lambda x: (1 - (x - self.warmup_steps_n) / (self.steps - self.warmup_steps_n)) * (1.0 - self.lrf) + self.lrf
+            self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=self.lf)
+            if self.is_rank_zero:
+                draw_training_lr_curve(self.config, self.lf, self.steps, self.warmup_steps_n, self.is_ddp, self.world_size)
 
 
     def _init_model(self, config, mode):

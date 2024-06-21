@@ -28,9 +28,12 @@ CUSTOM:
 
 # train config
 batch_size: 32
-epochs: 100
-lr: 1e-4
-patience: 10                          # Early stopping epochs
+steps: 64000
+warmup_steps: 100
+lr0: 0.001
+lrf: 0.001                            # last_lr = lr0 * lrf
+scheduler_type: 'cosine'              # ['linear', 'cosine']
+patience: 100                          # Early stopping steps
 
 # logging config
 common: ['train_loss', 'train_acc', 'validation_loss', 'validation_acc', 'lr']
