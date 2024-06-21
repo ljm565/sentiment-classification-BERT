@@ -1,7 +1,3 @@
-import torch
-
-
-
 def labeling(score):
     for i, s in enumerate(score):
         if s < 3:

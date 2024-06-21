@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch import distributed as dist
 
-from tools import TrainingLogger
+from tools import TrainingLogger, EarlyStopper
 from trainer.build import get_model, get_data_loader
 from utils import RANK, LOGGER, SCHEDULER_MSG, SCHEDULER_TYPE, colorstr, init_seeds
 from utils.filesys_utils import *
@@ -58,6 +58,7 @@ class Trainer:
         self.model, self.tokenizer = self._init_model(self.config, self.mode)
         self.dataloaders = get_data_loader(self.config, self.tokenizer, self.modes, self.is_ddp)
         self.training_logger = TrainingLogger(self.config, self.is_training_mode)
+        self.stopper, self.stop = EarlyStopper(self.config.patience), False
 
         # save the yaml config
         if self.is_rank_zero and self.is_training_mode:
@@ -150,6 +151,16 @@ class Trainer:
             # clears GPU vRAM at end of epoch, can help with out of memory errors
             torch.cuda.empty_cache()
             gc.collect()
+
+            # Early Stopping
+            if self.is_ddp:  # if DDP training
+                broadcast_list = [self.stop if self.is_rank_zero else None]
+                dist.broadcast_object_list(broadcast_list, 0)  # broadcast 'stop' to all ranks
+                if not self.is_rank_zero:
+                    self.stop = broadcast_list[0]
+            
+            if self.stop:
+                break  # must break all DDP ranks
 
             if self.is_rank_zero:
                 LOGGER.info(f"\nepoch {epoch+1} time: {time.time() - start} s\n\n\n")
@@ -275,7 +286,11 @@ class Trainer:
                 if is_training_now:
                     self.training_logger.save_model(self.wdir, self.model)
                     self.training_logger.save_logs(self.save_dir)
-        
+
+                    high_fitness = self.training_logger.model_manager.best_higher
+                    low_fitness = self.training_logger.model_manager.best_lower
+                    self.stop = self.stopper(epoch + 1, high=high_fitness, low=low_fitness)
+
 
     def vis_statistics(self, phase, result_num):
         if result_num > len(self.dataloaders[phase].dataset):

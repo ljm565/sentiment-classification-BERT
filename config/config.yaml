@@ -32,7 +32,7 @@ warmup_steps: 100
 lr0: 0.001
 lrf: 0.001                            # last_lr = lr0 * lrf
 scheduler_type: 'cosine'              # ['linear', 'cosine']
-patience: 100                          # Early stopping steps
+patience: 5                           # Early stopping epochs. Epochs are automatically calculated according to current steps.
 
 # logging config
 common: ['train_loss', 'train_acc', 'validation_loss', 'validation_acc', 'lr']
