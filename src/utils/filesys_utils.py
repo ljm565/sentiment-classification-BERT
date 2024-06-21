@@ -1,8 +1,10 @@
 import os
 import pickle
+import pandas as pd
 from pathlib import Path
 
 from utils import LOGGER, colorstr
+from utils.func_utils import labeling
 
 
 
@@ -62,3 +64,19 @@ def yaml_save(file='data.yaml', data=None, header=''):
     with open(save_path, "w") as f:
         f.write(data.dumps(modified_color=None, quote_str=True))
         LOGGER.info(f"Config is saved at {save_path}")
+
+
+def preprocess_data(path):
+    write_path = os.path.join(path, 'processed/data.pkl')
+    if not (os.path.isfile(os.path.join(path, 'processed/data.pkl'))):
+        LOGGER.info('Processing the Google Play Store Apps review data')
+        
+        df = pd.read_csv(os.path.join(path, 'raw/reviews.csv'))
+        content, score = df.loc[:, 'content'], labeling(df.loc[:, 'score'].tolist())
+        dataset = [(c, s) for c, s in zip(content, score)]
+        
+        os.makedirs(os.path.dirname(write_path), exist_ok=True)
+        with open(write_path, 'wb') as f:
+            pickle.dump(dataset, f)
+    
+    return write_path

@@ -1,28 +1,40 @@
 import os
 
 import torch
-from torch.utils.data import DataLoader, distributed
+from torch.utils.data import DataLoader, distributed, random_split
 
 from models import BERT
-from utils import RANK
-from utils.data_utils import DLoader, CustomDLoader, seed_worker, imdb_download
+from utils import LOGGER, RANK, colorstr
+from utils.filesys_utils import preprocess_data, read_dataset
+from utils.data_utils import DLoader, CustomDLoader, seed_worker
 
 PIN_MEMORY = str(os.getenv('PIN_MEMORY', True)).lower() == 'true'  # global pin_memory for dataloaders
 
 
 
-def get_model(config, tokenizer, device):
-    model = BERT(config, tokenizer, device)
-    return model.to(device)
+def get_model(config, device):
+    model = BERT(config, device)
+    tokenizer = model.tokenizer
+    return model.to(device), tokenizer
 
 
 def build_dataset(config, tokenizer, modes):
-    if config.IMDb_train:
-        trainset, testset = imdb_download(config)
-        tmp_dsets = {'train': trainset, 'validation': testset}
-        dataset_dict = {mode: DLoader(config, tmp_dsets[mode], tokenizer) for mode in modes}
+    def _init_data_size(data_len, train_prop):
+        train_size = int(data_len * train_prop)
+        val_size = (data_len - train_size) // 2
+        test_size = data_len - train_size - val_size
+        return train_size, val_size, test_size
+
+    if config.google_store_review_train:
+        data_path = preprocess_data(config.google_store_review.path)
+        dataset = DLoader(config, read_dataset(data_path), tokenizer)
+        train_l, val_l, test_l = _init_data_size(len(dataset), config.google_store_review.trainset_prop)
+        trainset, valset, testset = random_split(dataset, [train_l, val_l, test_l])
+        tmp_dsets = {'train': trainset, 'validation': valset, 'test': testset}
+        dataset_dict = {mode: tmp_dsets[mode] for mode in modes}
     else:
-        dataset_dict = {mode: CustomDLoader(config.CUSTOM.get(f'{mode}_data_path')) for mode in modes}
+        LOGGER.warning(colorstr('yellow', 'You have to implement data pre-processing code..'))
+        raise NotImplementedError
     return dataset_dict
 
 

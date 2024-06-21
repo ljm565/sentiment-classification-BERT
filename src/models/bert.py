@@ -14,6 +14,7 @@ class BERT(nn.Module):
         self.class_num = config.class_num
         self.device = device
 
+        self.tokenizer = BERTTokenizer(self.pretrained_model)
         self.model = BertModel.from_pretrained(self.pretrained_model)
         self.fc = nn.Linear(self.model.config.hidden_size, self.class_num)
         self.pos_ids = torch.arange(config.max_len).to(self.device)

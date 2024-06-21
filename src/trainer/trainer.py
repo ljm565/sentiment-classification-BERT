@@ -2,7 +2,8 @@ import gc
 import sys
 import time
 import random
-import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, classification_report
 
 import torch
 import torch.nn as nn
@@ -10,13 +11,11 @@ import torch.optim as optim
 from torch import distributed as dist
 
 from tools import TrainingLogger
-from tools.tokenizers import BERTTokenizer
 from trainer.build import get_model, get_data_loader
 from utils import RANK, LOGGER, colorstr, init_seeds
 from utils.filesys_utils import *
 from utils.training_utils import *
-from utils.data_utils import imdb_download
-from utils.func_utils import visualize_attn
+from utils.func_utils import label_mapping
 
 
 
@@ -50,10 +49,9 @@ class Trainer:
         self.resume_path = resume_path
 
         # init tokenizer, model, dataset, dataloader, etc.
-        self.modes = ['train', 'validation'] if self.is_training_mode else ['validation']
-        self.tokenizer = self._init_tokenizer(self.config)
+        self.modes = ['train', 'validation'] if self.is_training_mode else ['test']
+        self.model, self.tokenizer = self._init_model(self.config, self.mode)
         self.dataloaders = get_data_loader(self.config, self.tokenizer, self.modes, self.is_ddp)
-        self.model = self._init_model(self.config, self.tokenizer, self.mode)
         self.training_logger = TrainingLogger(self.config, self.is_training_mode)
 
         # save the yaml config
@@ -64,12 +62,12 @@ class Trainer:
         
         # init criterion, optimizer, etc.
         self.epochs = self.config.epochs
-        self.criterion = nn.BCELoss()
+        self.criterion = nn.CrossEntropyLoss()
         if self.is_training_mode:
             self.optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
 
 
-    def _init_model(self, config, tokenizer, mode):
+    def _init_model(self, config, mode):
         def _resume_model(resume_path, device, is_rank_zero):
             try:
                 checkpoints = torch.load(resume_path, map_location=device)
@@ -86,7 +84,7 @@ class Trainer:
 
         # init model and tokenizer
         do_resume = mode == 'resume' or (mode == 'validation' and self.resume_path)
-        model = get_model(config, tokenizer, self.device)
+        model, tokenizer = get_model(config, self.device)
 
         # resume model or resume model after applying peft
         if do_resume:
@@ -96,7 +94,7 @@ class Trainer:
         if self.is_ddp:
             torch.nn.parallel.DistributedDataParallel(model, device_ids=[self.device])
         
-        return model
+        return model, tokenizer
 
 
     def do_train(self):
@@ -157,21 +155,21 @@ class Trainer:
 
         # init progress bar
         if RANK in (-1, 0):
-            logging_header = ['BCE Loss', 'Accuracy']
+            logging_header = ['CE Loss', 'Accuracy']
             pbar = init_progress_bar(train_loader, self.is_rank_zero, logging_header, nb)
 
-        for i, (x, y) in pbar:
+        for i, (x, label, attn_mask) in pbar:
             self.train_cur_step += 1
             batch_size = x.size(0)
-            x, y = x.to(self.device), y.to(self.device)
-            
+            x, label, attn_mask = x.to(self.device), label.to(self.device), attn_mask.to(self.device)
+
             self.optimizer.zero_grad()
-            output, _ = self.model(x)
-            loss = self.criterion(output, y)
+            output = self.model(x, attn_mask)
+            loss = self.criterion(output, label)
             loss.backward()
             self.optimizer.step()
 
-            train_acc = ((output > self.config.positive_threshold).float()==y).float().sum() / batch_size
+            train_acc = torch.sum(torch.argmax(output, dim=-1).detach().cpu() == label.detach().cpu()) / batch_size
 
             if self.is_rank_zero:
                 self.training_logger.update(
@@ -199,8 +197,6 @@ class Trainer:
         ):
         def _init_log_data_for_vis():
             data4vis = {'x': [], 'y': [], 'pred': []}
-            if self.config.use_attention:
-                data4vis.update({'attn': []})
             return data4vis
 
         def _append_data_for_vis(**kwargs):
@@ -214,18 +210,20 @@ class Trainer:
 
                 val_loader = self.dataloaders[phase]
                 nb = len(val_loader)
-                logging_header = ['BCE Loss', 'Accuracy']
+                logging_header = ['CE Loss', 'Accuracy']
                 pbar = init_progress_bar(val_loader, self.is_rank_zero, logging_header, nb)
 
                 self.model.eval()
 
-                for i, (x, y) in pbar:
+                for i, (x, label, attn_mask) in pbar:
                     batch_size = x.size(0)
-                    x, y = x.to(self.device), y.to(self.device)
+                    x, label, attn_mask = x.to(self.device), label.to(self.device), attn_mask.to(self.device)
 
-                    output, score = self.model(x)
-                    loss = self.criterion(output, y)
-                    val_acc = ((output > self.config.positive_threshold).float()==y).float().sum() / batch_size
+                    output = self.model(x)
+                    loss = self.criterion(output, label)
+
+                    output = torch.argmax(output, dim=-1)
+                    val_acc = torch.sum(output.detach().cpu() == label.detach().cpu()) / batch_size
 
                     self.training_logger.update(
                         phase, 
@@ -243,11 +241,9 @@ class Trainer:
                     if not is_training_now:
                         _append_data_for_vis(
                             **{'x': x.detach().cpu(),
-                             'y': y.detach().cpu(),
-                             'pred': output.detach().cpu()}
+                               'y': label.detach().cpu(),
+                               'pred': output.detach().cpu()}
                         )
-                        if self.config.use_attention:
-                            _append_data_for_vis(**{'attn': score.detach().cpu()})
 
                 # upadate logs and save model
                 self.training_logger.update_phase_end(phase, printing=True)
@@ -256,25 +252,47 @@ class Trainer:
                     self.training_logger.save_logs(self.save_dir)
         
 
-    def vis_attention(self, phase, result_num):
+    def vis_statistics(self, phase, result_num):
         if result_num > len(self.dataloaders[phase].dataset):
             LOGGER.info(colorstr('red', 'The number of results that you want to see are larger than total test set'))
             sys.exit()
 
         # validation
         self.epoch_validate(phase, 0, False)
-        if self.config.use_attention:
-            vis_save_dir = os.path.join(self.config.save_dir, 'vis_outputs') 
-            os.makedirs(vis_save_dir, exist_ok=True)
-            visualize_attn(
-                vis_save_dir, 
-                self.data4vis,
-                self.tokenizer, 
-                self.config.positive_threshold,
-                result_num
-            )
-        else:
-            LOGGER.warning(colorstr('yellow', 'Your model does not have attention module..'))
+        all_x = torch.cat(self.data4vis['x'], dim=0)
+        all_y = torch.cat(self.data4vis['y'], dim=0)
+        all_pred = torch.cat(self.data4vis['pred'], dim=0)
+
+        ids = random.sample(range(all_x.size(0)), result_num)
+        all_x = all_x[ids].to(self.device)
+        all_y = all_y[ids]
+        all_pred = all_pred[ids]
+
+        # cal statistics
+        class_name = ['negative', 'mediocre', 'positive']
+        print(classification_report(all_y, all_pred, target_names=class_name))
+        
+        # visualization the entire statistics
+        vis_save_dir = os.path.join(self.config.save_dir, 'vis_outputs') 
+        os.makedirs(vis_save_dir, exist_ok=True)
+
+        cm = confusion_matrix(all_y, all_pred)
+        cm = pd.DataFrame(cm, index=class_name, columns=class_name)
+        plt.figure(figsize=(12, 10))
+        plt.imshow(cm, cmap='Blues', interpolation=None)
+        plt.title('Visualized Statistics', fontsize=20)
+        plt.xlabel('Prediction', fontsize=20)
+        plt.ylabel('True', fontsize=20)
+        plt.xticks(range(len(class_name)), class_name, fontsize=17, rotation=30)
+        plt.yticks(range(len(class_name)), class_name, fontsize=17, rotation=30)
+        plt.colorbar()
+        
+        for i in range(cm.shape[1]):
+            for j in range(cm.shape[0]):
+                plt.text(i, j, round(cm.iloc[j, i], 1), ha='center', va='center', fontsize=17)
+        
+        plt.savefig(os.path.join(vis_save_dir + 'statistics.png'))
+
 
 
     def print_prediction_results(self, phase, result_num):
@@ -286,16 +304,17 @@ class Trainer:
         self.epoch_validate(phase, 0, False)
         all_x = torch.cat(self.data4vis['x'], dim=0)
         all_y = torch.cat(self.data4vis['y'], dim=0)
+        all_pred = torch.cat(self.data4vis['pred'], dim=0)
 
         ids = random.sample(range(all_x.size(0)), result_num)
-        all_x = all_x[ids].to(self.device)
-        all_y = all_y[ids].to(self.device)
-        output, _ = self.model(all_x)
+        all_x = all_x[ids]
+        all_y = all_y[ids]
+        all_pred = all_pred[ids]
 
-        all_x, all_y, output = all_x.detach().cpu().tolist(), all_y.detach().cpu().tolist(), np.round(output.detach().cpu().tolist(), 3)
-        for x, y, pred in zip(all_x, all_y, output):
-            LOGGER.info(colorstr(self.tokenizer.decode(x)))
+        for x, y, p in zip(all_x, all_y, all_pred):
+            gt_label, pred_label = label_mapping(y), label_mapping(p)
+            LOGGER.info(colorstr(self.tokenizer.decode(x.tolist())))
             LOGGER.info('*'*100)
-            LOGGER.info(f'It is positive with a probability of {pred}')
-            LOGGER.info(f'ground truth: {y}')
+            LOGGER.info(f'gt  : {gt_label}')
+            LOGGER.info(f'pred: {pred_label}')
             LOGGER.info('*'*100 + '\n'*2)

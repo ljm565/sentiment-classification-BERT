@@ -18,17 +18,55 @@ class BERTTokenizer:
 
 
     def tokenize(self, s):
+        """
+        Args:
+            s (str): text.
+
+        Returns:
+            (list): tokenized text.
+        """
         return self.tokenizer.tokenize(s)
 
 
     def encode(self, s):
-        # for eliminate sos and eos tokens that are automatically added to a sentence
-        return self.tokenizer.encode(s)[1:-1]
+        """
+        Args:
+            s (str): text.
+
+        Returns:
+            (list): tokens.
+        """
+        return self.tokenizer.encode(s, add_special_tokens=False)
 
 
     def decode(self, tok):
-        try:
-            tok = tok[:tok.index(self.pad_token_id)]
-        except:
-            pass
+        """
+        Args:
+            tok (list): list of tokens.
+
+        Returns:
+            (str): decoded text.
+        """
         return self.tokenizer.decode(tok)
+
+
+    def convert_ids_to_tokens(self, tok_id):
+        """
+        Args:
+            tok_id (int): token.
+
+        Returns:
+            (str): text token.
+        """
+        return self.tokenizer.convert_ids_to_tokens(tok_id)
+    
+
+    def convert_tokens_to_ids(self, tok_str):
+        """
+        Args:
+            tok_str (str): text token.
+
+        Returns:
+            (int): token.
+        """
+        return self.tokenizer.convert_tokens_to_ids(tok_str)
