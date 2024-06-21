@@ -3,7 +3,7 @@ seed: 0
 deterministic: True
 
 # environment config
-device: [0]                           # examples: [0], [0,1], [1,2,3], cpu, mps... 
+device: cpu                           # examples: [0], [0,1], [1,2,3], cpu, mps... 
 
 # project config
 project: outputs/bert_classifier
@@ -13,7 +13,6 @@ name: google_store_review
 pretrained_model: bert-base-uncased   # [bert-base-uncased, bert-base-cased, bert-large-uncased, ...] Hugging Face's pre-trained BERT model path
 max_len: 512
 class_num: 3                          # The number of classes of the BERT classifier
-
 
 # data config
 workers: 0                            # Don't worry to set worker. The number of workers will be set automatically according to the batch size.

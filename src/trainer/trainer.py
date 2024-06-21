@@ -72,7 +72,7 @@ class Trainer:
         self.epochs = math.ceil(self.steps / len(self.dataloaders['train'])) if self.is_training_mode else 1
         self.criterion = nn.CrossEntropyLoss()
         if self.is_training_mode:
-            self.optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
+            self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr0)
 
              # init scheduler
             self.warmup_steps_n = max(0, self.config.warmup_steps)
@@ -177,7 +177,13 @@ class Trainer:
             pbar = init_progress_bar(train_loader, self.is_rank_zero, logging_header, nb)
 
         for i, (x, label, attn_mask) in pbar:
+            # Warmup
             self.train_cur_step += 1
+            warmup_step_or_epoch = epoch if self.is_update_per_epoch else self.train_cur_step
+            if warmup_step_or_epoch <= self.warmup_steps_n:
+                self.optimizer.param_groups[0]['lr'] = lr_warmup(warmup_step_or_epoch, self.warmup_steps_n, self.lr0, self.lf)
+            cur_lr = self.optimizer.param_groups[0]['lr']
+            
             batch_size = x.size(0)
             x, label, attn_mask = x.to(self.device), label.to(self.device), attn_mask.to(self.device)
 
@@ -186,6 +192,7 @@ class Trainer:
             loss = self.criterion(output, label)
             loss.backward()
             self.optimizer.step()
+            self.scheduler.step()
 
             train_acc = torch.sum(torch.argmax(output, dim=-1).detach().cpu() == label.detach().cpu()) / batch_size
 
@@ -195,7 +202,7 @@ class Trainer:
                     epoch + 1,
                     self.train_cur_step,
                     batch_size, 
-                    **{'train_loss': loss.item()},
+                    **{'train_loss': loss.item(), 'lr': cur_lr},
                     **{'train_acc': train_acc.item()}
                 )
                 loss_log = [loss.item(), train_acc.item()]
@@ -310,7 +317,6 @@ class Trainer:
                 plt.text(i, j, round(cm.iloc[j, i], 1), ha='center', va='center', fontsize=17)
         
         plt.savefig(os.path.join(vis_save_dir + 'statistics.png'))
-
 
 
     def print_prediction_results(self, phase, result_num):
