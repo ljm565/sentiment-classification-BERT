@@ -107,7 +107,7 @@ Please follow the steps below to train a BERT sentiment classification model.
         positive       0.91      0.90      0.90       533
 
         accuracy                           0.86      1576
-        macro avg       0.86      0.86      0.86      1576
+        macro avg      0.86      0.86      0.86      1576
     weighted avg       0.86      0.86      0.86      1576
     ```
     <img src="docs/figs/statistics.png" width="100%"><br><br>
