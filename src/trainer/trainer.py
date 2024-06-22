@@ -190,9 +190,8 @@ class Trainer:
         for i, (x, label, attn_mask) in pbar:
             # Warmup
             self.train_cur_step += 1
-            warmup_step_or_epoch = epoch if self.is_update_per_epoch else self.train_cur_step
-            if warmup_step_or_epoch <= self.warmup_steps_n:
-                self.optimizer.param_groups[0]['lr'] = lr_warmup(warmup_step_or_epoch, self.warmup_steps_n, self.lr0, self.lf)
+            if self.train_cur_step <= self.warmup_steps_n:
+                self.optimizer.param_groups[0]['lr'] = lr_warmup(self.train_cur_step, self.warmup_steps_n, self.lr0, self.lf)
             cur_lr = self.optimizer.param_groups[0]['lr']
             
             batch_size = x.size(0)
