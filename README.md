@@ -89,50 +89,49 @@ Please follow the steps below to train a BERT sentiment classification model.
 
 
 ## Training Results
-* ### Sentiment Classification BERT 모델 결과
-    * Loss History<br>
-    <img src="docs/figs/loss.png" width="80%"><br><br>
+### Sentiment Classification Results of the BERT
+* Loss History<br>
+<img src="docs/figs/loss.png" width="80%"><br><br>
 
-    * Accuracy History<br>
-    <img src="docs/figs/acc.png" width="80%"><br><br>
-    
-    * 최종 Test Set Statistics<br>
-        Validation set accuracy가 가장 높았던 11 epoch 모델을 test set에 적용한 결과<br><br>
-        Acc: 0.86<br>
-        ```
-                      precision    recall  f1-score   support
+* Accuracy History<br>
+<img src="docs/figs/acc.png" width="80%"><br><br>
 
-            negative       0.84      0.92      0.88       514
-            mediocre       0.84      0.77      0.81       529
-            positive       0.91      0.90      0.90       533
+* Test Set Confusion Matrix<br>
+    Results of applying the model with the highest validation set accuracy at epoch 11 to the test set<br><br>
+    Acc: 0.86<br>
+    ```
+                    precision    recall  f1-score   support
 
-            accuracy                           0.86      1576
-           macro avg       0.86      0.86      0.86      1576
-        weighted avg       0.86      0.86      0.86      1576
-        ```
-        <img src="docs/figs/statistics.png" width="100%"><br><br>
+        negative       0.84      0.92      0.88       514
+        mediocre       0.84      0.77      0.81       529
+        positive       0.91      0.90      0.90       533
 
-    * 결과 샘플<br>
-        ```
-        # sample 1
-        review: [CLS] i had paid once for this app and had login to it. now i have another mobile and want to use my acount on this device, but this app asket to pay first before login. should i pay each time i change my device? [SEP]
-        gt    : negative
-        pred  : negative
+        accuracy                           0.86      1576
+        macro avg       0.86      0.86      0.86      1576
+    weighted avg       0.86      0.86      0.86      1576
+    ```
+    <img src="docs/figs/statistics.png" width="100%"><br><br>
 
-
-        # sample 2
-        review: [CLS] i got this app to track my medication and it's perfect! i can set up how i want to take each medicine ( yes / no or quantity ), see the start date and adherence in the summary view, and even track side effects and effectiveness each day then see them in a chronological list in the sunmary. and the best part is that it's not tied to some medical database! added bonus : i can track real to - dos as well. overall, love this app! [SEP]
-        gt    : positive
-        pred  : positive
+* Predction Samples<br>
+    ```
+    # sample 1
+    review: [CLS] i had paid once for this app and had login to it. now i have another mobile and want to use my acount on this device, but this app asket to pay first before login. should i pay each time i change my device? [SEP]
+    gt    : negative
+    pred  : negative
 
 
-        # sample 3
-        review: [CLS] great app [SEP]
-        gt    : positive
-        pred  : positive
-        ```
-    <br><br>
+    # sample 2
+    review: [CLS] i got this app to track my medication and it's perfect! i can set up how i want to take each medicine ( yes / no or quantity ), see the start date and adherence in the summary view, and even track side effects and effectiveness each day then see them in a chronological list in the sunmary. and the best part is that it's not tied to some medical database! added bonus : i can track real to - dos as well. overall, love this app! [SEP]
+    gt    : positive
+    pred  : positive
+
+
+    # sample 3
+    review: [CLS] great app [SEP]
+    gt    : positive
+    pred  : positive
+    ```
+<br><br>
 
 
 
-<br><br><br>
