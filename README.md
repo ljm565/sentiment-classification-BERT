@@ -1,69 +1,94 @@
 # Sentiment Classification BERT
-## 설명
-본 코드는 Google Play Store Apps 리뷰 데이터 바탕으로 pre-trained BERT 모델을 fine-tuning하여 긍정, 보통, 부정 감성 분류 모델을 제작합니다.
-본 프로젝트에 사용한 BERT 모델은 [Hugging Face BERT의 "bert-base-uncased" pre-trained 모델](https://huggingface.co/docs/transformers/model_doc/bert)입니다.
-BERT 기반 감성 분류 모델과 pre-trained BERT 사용에 대한 설명은 [Pre-trained BERT Fine-tuning을 통한 Google Play Store Apps 리뷰 감성 분류](https://ljm565.github.io/contents/bert3.html)를 참고하시기 바랍니다.
+한국어 버전의 설명은 [여기](./docs/README_ko.md)를 참고하시기 바랍니다.
+
+## Introduction
+This code fine-tunes a pre-trained BERT model using Google Play Store Apps review data to create a sentiment classification model for positive, neutral, and negative sentiments.
+The BERT model used in this project is the "bert-base-uncased" pre-trained model from Hugging Face.
+For an explanation of the BERT-based sentiment classification model and the use of pre-trained BERT, please refer to [Pre-trained BERT Fine-tuning을 통한 Google Play Store Apps 리뷰 감성 분류](https://ljm565.github.io/contents/bert3.html).
 <br><br><br>
 
-## 모델 종류
-* ### Pre-trained BERT
-    긍정, 보통, 부정의 3가지 감정을 분류하기 위해 Hugging Face pre-trained BERT를 fine-tuning 합니다.
+## Supported Models
+### Pre-trained BERT
+* Pre-trained BERT on Hugging Face.
+<br><br><br>
+
+## Supported Tokenizer
+### Pre-trained BERT Tokenizer
+* Pre-trained BERT tokenizer on Hugging Face.
+<br><br><br>
+
+## Base Dataset
+* Base dataset for tutorial is [Google Play Store App review](https://curiousily.com/posts/sentiment-analysis-with-bert-and-hugging-face-using-pytorch-and-python/).
+Ratings out of 5 stars are classified as follows: ratings below 3 stars are considered negative, ratings above 3 stars are considered positive, and a rating of 3 stars is considered neutral.
+* Custom datasets can also be used by setting the path in the `config/config.yaml`.
+However, implementing a custom dataloader may require additional coding work in `src/utils/data_utils.py` and `src/trainer/build.py`.
+<br><br><br>
+
+## Supported Devices
+* CPU, GPU, multi-GPU (DDP), MPS (for Mac and torch>=1.12.0)
+<br><br><br>
+
+## Quick Start
+```bash
+python3 src/run/train.py --config config/config.yaml --mode train
+```
+<br><br>
+
+
+## Project Tree
+This repository is structured as follows.
+```
+├── configs                           <- Folder for storing config files
+│   └── *.yaml
+│
+└── src      
+    ├── models
+    |   └── bert.py                   <- BERT model file
+    |
+    ├── run                   
+    |   ├── sentiment_prediction.py   <- Prediction result example print code
+    |   ├── train.py                  <- Training execution file
+    |   ├── validation.py             <- Trained model evaulation execution file
+    |   └── vis_statistics.py         <- Code that generates a confusion matrix for prediction results
+    |
+    ├── tools                   
+    |   ├── tokenizers
+    |   |    └── bert_tokenizer.py    <- BERT tokenizer file
+    |   |
+    |   ├── early_stopper.py          <- Early stopper class file
+    |   ├── model_manager.py          
+    |   └── training_logger.py        <- Training logger class file
+    |
+    ├── trainer                 
+    |   ├── build.py                  <- Codes for initializing dataset, dataloader, etc.
+    |   └── trainer.py                <- Class for training, evaluating, and calculating accuracy
+    |
+    └── uitls                   
+        ├── __init__.py               <- File for initializing the logger, versioning, etc.
+        ├── data_utils.py             <- File defining the custom dataset dataloader
+        ├── filesys_utils.py       
+        ├── func_utils.py       
+        └── training_utils.py     
+```
+<br><br>
+
+
+## Tutorials & Documentations
+Please follow the steps below to train a BERT sentiment classification model.
+1. [Getting Started](./docs/1_getting_started.md)
+2. [Data Preparation](./docs/2_data_preparation.md)
+3. [Training](./docs/3_trainig.md)
+4. ETC
+   * [Evaluation](./docs/4_model_evaluation.md)
+   * [Confusion Matrix Visualization](./docs/5_confusion_matrix.md)
+   * [Print Sentiment Prediction Results](./docs/6_pred_sentiment.md)
+
 <br><br><br>
 
 
-## 토크나이저 종류
-* ### Wordpiece Tokenizer
-    Hugging Face의 pre-trained wordpiece 토크나이저를 사용합니다.
-<br><br><br>
-
-## 사용 데이터
-* 실험으로 사용하는 데이터는 [Google Play Store App review](https://curiousily.com/posts/sentiment-analysis-with-bert-and-hugging-face-using-pytorch-and-python/) 데이터입니다. 5점 만점 평점 중, 3점 미만은 부정, 3점 초과는 긍정, 3점은 보통으로 분류하여 사용합니다.
-<br><br><br>
 
 
-## 사용 방법
-* ### 학습 방법
-    학습을 시작하기 위한 argument는 4가지가 있습니다.<br>
-    * [-d --device] {cpu, gpu}, **필수**: 학습을 cpu, gpu로 할건지 정하는 인자입니다.
-    * [-m --mode] {train, test}, **필수**: 학습을 시작하려면 train, 학습된 모델을 가지고 있어서 loss, accuracy, sample을 보고싶은 경우에는 test로 설정해야합니다. test를 사용할 경우, [-n, --name] 인자가 **필수**입니다.
-    * [-c --cont] {1}, **선택**: 학습이 중간에 종료가 된 경우 다시 저장된 모델의 체크포인트 부분부터 학습을 시작할 수 있습니다. 이 인자를 사용할 경우 -m train 이어야 합니다. 
-    * [-n --name] {name}, **선택**: 이 인자는 -c 1 혹은 -m test 경우 사용합니다.
-    중간에 다시 불러서 학습을 할 경우 모델의 이름을 입력하고, test를 할 경우에도 test 할 모델의 이름을 입력해주어야 합니다(최초 학습시 src/config.json에서 정한 모델의 이름의 폴더가 형성되고 그 폴더 내부에 모델 및 모델 파라미터가 json 파일로 형성 됩니다).<br><br>
-
-    터미널 명령어 예시<br>
-    * 최초 학습 시
-        ```
-        python3 src/main.py -d cpu -m train
-        ```
-    * 중간에 중단 된 모델 이어서 학습 시
-        <br>주의사항: config.json을 수정해야하는 일이 발생 한다면 base_path/src/config.json이 아닌, base_path/src/model/{model_name}/{model_name}.json 파일을 수정해야 합니다.
-        ```
-        python3 src/main.py -d gpu -m train -c 1 -n {model_name}
-        ```
-    * 최종 학습 된 모델의 test set에 대한 loss, accuracy를 확인할 시
-        <br>주의사항: config.json을 수정해야하는 일이 발생 한다면 base_path/src/config.json이 아닌, base_path/src/model/{model_name}/{model_name}.json 파일을 수정해야 수정사항이 반영됩니다.
-        ```
-        python3 src/main.py -d cpu -m test -n {model_name}
-        ```
-    <br><br>
-
-* ### 모델 학습 조건 설정 (config.json)
-    **주의사항: 최초 학습 시 config.json이 사용되며, 이미 한 번 학습을 한 모델에 대하여 parameter를 바꾸고싶다면 base_path/model/{model_name}/{model_name}.json 파일을 수정해야 합니다.**
-    * pretrained_model: bert-base-uncased, bert-base-cased, bert-large-uncased 등 pre-trained BERT 모델 선택.
-    * base_path: 학습 관련 파일이 저장될 위치.
-    * model_name: 학습 모델이 저장될 파일 이름 설정. 모델은 base_path/src/model/{model_name}/{model_name}.pt 로 저장.
-    * loss_data_name: 학습 시 발생한 loss data를 저장하기 위한 이름 설정. base_path/src/loss/{loss_data_name}.pkl 파일로 저장. 내부에 중단된 학습을 다시 시작할 때, 학습 과정에 발생한 loss 데이터를 그릴 때 등 필요한 데이터를 dictionary 형태로 저장.
-    * max_len: 토큰화 된 리뷰 데이터의 최대 길이.
-    * n_class: 분류할 카테고리 수. 현재는 긍정, 보통, 부정이므로 3.
-    * batch_size: batch size 지정.
-    * epochs: 학습 epoch 설정.
-    * lr: learning rate 지정.
-    * early_stop_criterion: Validation set의 최대 accuracy를 내어준 학습 epoch 대비 설정된 숫자만큼 epoch이 지나도 나아지지 않을 경우 학습 조기 종료.
-    * result_num: 모델 테스트 시, 결과를 보여주는 sample 개수.
-    <br><br><br>
-
-
-## 결과
+## Training Results
 * ### Sentiment Classification BERT 모델 결과
     * Loss History<br>
     <img src="docs/figs/loss.png" width="80%"><br><br>

@@ -291,21 +291,12 @@ class Trainer:
                     self.stop = self.stopper(epoch + 1, high=high_fitness, low=low_fitness)
 
 
-    def vis_statistics(self, phase, result_num):
-        if result_num > len(self.dataloaders[phase].dataset):
-            LOGGER.info(colorstr('red', 'The number of results that you want to see are larger than total test set'))
-            sys.exit()
-
+    def vis_statistics(self, phase):
         # validation
         self.epoch_validate(phase, 0, False)
         all_x = torch.cat(self.data4vis['x'], dim=0)
         all_y = torch.cat(self.data4vis['y'], dim=0)
         all_pred = torch.cat(self.data4vis['pred'], dim=0)
-
-        ids = random.sample(range(all_x.size(0)), result_num)
-        all_x = all_x[ids].to(self.device)
-        all_y = all_y[ids]
-        all_pred = all_pred[ids]
 
         # cal statistics
         class_name = ['negative', 'mediocre', 'positive']
