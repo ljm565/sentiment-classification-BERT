@@ -184,7 +184,7 @@ class Trainer:
 
         # init progress bar
         if RANK in (-1, 0):
-            logging_header = ['CE Loss', 'Accuracy']
+            logging_header = ['CE Loss', 'Accuracy', 'lr']
             pbar = init_progress_bar(train_loader, self.is_rank_zero, logging_header, nb)
 
         for i, (x, label, attn_mask) in pbar:
@@ -215,7 +215,7 @@ class Trainer:
                     **{'train_loss': loss.item(), 'lr': cur_lr},
                     **{'train_acc': train_acc.item()}
                 )
-                loss_log = [loss.item(), train_acc.item()]
+                loss_log = [loss.item(), train_acc.item(), cur_lr]
                 msg = tuple([f'{epoch + 1}/{self.epochs}'] + loss_log)
                 pbar.set_description(('%15s' * 1 + '%15.4g' * len(loss_log)) % msg)
             
@@ -254,7 +254,7 @@ class Trainer:
                     batch_size = x.size(0)
                     x, label, attn_mask = x.to(self.device), label.to(self.device), attn_mask.to(self.device)
 
-                    output = self.model(x)
+                    output = self.model(x, attn_mask)
                     loss = self.criterion(output, label)
 
                     output = torch.argmax(output, dim=-1)

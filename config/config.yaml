@@ -6,7 +6,7 @@ deterministic: True
 device: cpu                           # examples: [0], [0,1], [1,2,3], cpu, mps... 
 
 # project config
-project: outputs/bert_classifier
+project: outputs/bert
 name: google_store_review
 
 # model config
@@ -29,7 +29,7 @@ CUSTOM:
 batch_size: 32
 steps: 64000
 warmup_steps: 100
-lr0: 0.001
+lr0: 0.0001
 lrf: 0.001                            # last_lr = lr0 * lrf
 scheduler_type: 'cosine'              # ['linear', 'cosine']
 patience: 5                           # Early stopping epochs. Epochs are automatically calculated according to current steps.
