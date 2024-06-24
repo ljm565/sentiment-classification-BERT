@@ -18,7 +18,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/run/validation.py",
-            "args": ["-r", "outputs/bert/google_review", "-l", "metric"],
+            "args": ["-r", "outputs/bert/google_store_review", "-l", "metric"],
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -27,7 +27,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/run/vis_attention.py",
-            "args": ["-r", "outputs/bert/google_review", "-l", "metric"],
+            "args": ["-r", "outputs/bert/google_store_review", "-l", "metric"],
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -36,7 +36,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/run/sentiment_prediction.py",
-            "args": ["-r", "outputs/bert/google_review", "-l", "metric"],
+            "args": ["-r", "outputs/bert/google_store_review", "-l", "metric"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
