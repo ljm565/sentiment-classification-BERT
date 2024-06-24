@@ -1,5 +1,5 @@
 datasets==2.1.0
-transformers==4.29.1
+transformers==4.39.3
 sconf==0.2.5
 numpy==1.21.1
 tqdm==4.62.2
