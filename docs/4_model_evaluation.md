@@ -10,7 +10,7 @@ There are several arguments for running `src/run/validation.py`:
     * `metric` (default): Resume the model with the best validation set's accuracy.
     * `loss`: Resume the model with the minimum validation loss.
     * `last`: Resume the model saved at the last epoch.
-* [`-d`, `--dataset_type`]: (default: `validation`) Choose one of [`train`, `validation`, `test`].
+* [`-d`, `--dataset_type`]: (default: `test`) Choose one of [`train`, `validation`, `test`].
 
 
 #### 1.2 Command

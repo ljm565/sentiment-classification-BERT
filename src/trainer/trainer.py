@@ -54,7 +54,7 @@ class Trainer:
             SCHEDULER_MSG + f' but got {colorstr(self.scheduler_type)}'
 
         # init tokenizer, model, dataset, dataloader, etc.
-        self.modes = ['train', 'validation'] if self.is_training_mode else ['test']
+        self.modes = ['train', 'validation'] if self.is_training_mode else ['train', 'validation', 'test']
         self.model, self.tokenizer = self._init_model(self.config, self.mode)
         self.dataloaders = get_data_loader(self.config, self.tokenizer, self.modes, self.is_ddp)
         self.training_logger = TrainingLogger(self.config, self.is_training_mode)
@@ -321,7 +321,7 @@ class Trainer:
             for j in range(cm.shape[0]):
                 plt.text(i, j, round(cm.iloc[j, i], 1), ha='center', va='center', fontsize=17)
         
-        plt.savefig(os.path.join(vis_save_dir + 'statistics.png'))
+        plt.savefig(os.path.join(vis_save_dir, 'statistics.png'))
 
 
     def print_prediction_results(self, phase, result_num):

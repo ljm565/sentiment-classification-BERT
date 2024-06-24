@@ -23,10 +23,10 @@
             "justMyCode": true
         },
         {
-            "name": "attention visualization",
+            "name": "confusion matrix visualization",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/run/vis_attention.py",
+            "program": "${workspaceFolder}/src/run/vis_statistics.py",
             "args": ["-r", "outputs/bert/google_store_review", "-l", "metric"],
             "console": "integratedTerminal",
             "justMyCode": true
