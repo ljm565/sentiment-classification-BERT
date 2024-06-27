@@ -13,7 +13,7 @@
 
 
 #### 1.2 Command
-`src/run/vis_statistics.py` 파일로 다음과 같은 명령어를 통해 학습된 모델의 단어별 confusion matrix를 가시화 합니다.
+`src/run/vis_statistics.py` 파일로 다음과 같은 명령어를 통해 학습된 모델의 confusion matrix를 가시화 합니다.
 ```bash
 python3 src/run/vis_statistics.py --resume_model_dir ${project}/${name}
 ```
