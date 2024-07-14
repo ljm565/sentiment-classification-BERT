@@ -75,7 +75,7 @@ class Trainer:
         if self.is_training_mode:
             self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr0)
 
-             # init scheduler
+            # init scheduler
             self.warmup_steps_n = max(0, self.config.warmup_steps)
             if self.scheduler_type == 'cosine':
                 self.lf = one_cycle(1, self.lrf, self.steps)
